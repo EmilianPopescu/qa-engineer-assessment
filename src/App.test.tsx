@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { render, screen, fireEvent, cleanup } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor, cleanup } from "@testing-library/react";
 import App from './App';
 import '@testing-library/jest-dom'; 
 
@@ -35,4 +35,29 @@ it('Toggling Todo Items', async () => {
   if (errors.length > 0) {
     throw new Error(errors.join('\n'));
   }
+});
+
+it("State Persistence", async () => {
+  render(<App />);
+
+  // add a new todo
+  const input = screen.getByPlaceholderText("Add a new todo item here");
+  fireEvent.change(input, { target: { value: "Go to the gym" } });
+  fireEvent.submit(input.closest('form')!);
+
+  // wait for the new todo to appear in the list
+  await waitFor(() => expect(screen.getByText("Go to the gym")).toBeInTheDocument());
+
+  // check localStorage for the saved todo
+  const savedTodos = JSON.parse(localStorage.getItem("todos") || "[]");
+  expect(savedTodos).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({ label: "Buy groceries", completed: false }),
+    ])
+  );
+
+  // simulate a refresh by unmounting and remounting the App
+  cleanup();
+  render(<App />);
+  expect(screen.getByText("Go to the gym")).toBeInTheDocument();
 });
