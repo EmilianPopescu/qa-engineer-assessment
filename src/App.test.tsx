@@ -61,3 +61,25 @@ it("State Persistence", async () => {
   render(<App />);
   expect(screen.getByText("Go to the gym")).toBeInTheDocument();
 });
+
+it('Auto-Sinking Checked Items', async () => {
+  render(<App />);
+
+  const todoItems = screen.getAllByRole('checkbox');
+  const initialOrder = todoItems.map(item => 
+    item.closest('label')?.querySelector('span')?.textContent
+  );
+
+  fireEvent.click(todoItems[0]);
+
+  await waitFor(() => {
+    const updatedItems = screen.getAllByRole('checkbox');
+    const updatedOrder = updatedItems.map(item => 
+      item.closest('label')?.querySelector('span')?.textContent
+    );
+
+    expect(updatedOrder.slice(0, -1)).toEqual(initialOrder.slice(1));
+    expect(updatedOrder[updatedOrder.length - 1]).toBe(initialOrder[0]);
+    expect((updatedItems[updatedItems.length - 1] as HTMLInputElement).checked).toBe(true);
+  });
+});
